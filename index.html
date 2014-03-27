@@ -1,0 +1,193 @@
+
+<!--*****************************************************
+
+Author: Mengyi Gong&Guangji Wang Work together
+
+*****************************************************-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+                <title>Mgong Chat Room</title>
+        <span>Author: Mengyi Gong</span><br><br>
+        <style>
+            span{
+                background-color:#B4009E;
+                color:#ffffff;
+                cursor:default;
+            }
+            span:hover:after{ /* mouse over */
+                background-color:#DEB887;
+                color:#000000;
+                content:"Spring2014-cs554-HW-ChatRoom";
+                visibility:visible;
+            }
+            body {
+                margin:20px;
+                margin-left:9%;
+                margin-right:9%;
+                border:20px;
+                padding: 20px;
+                background-color: #CCFFCC;
+                background-size:100% 100%;
+                background-repeat:no-repeat;
+            }
+            a{
+                color: black;
+            }
+            #content {
+                width: 920px;
+                height: 520px;
+                float: inherit;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            #room {
+                width: 920px;
+                height:20px;
+                margin-bottom: 2px;
+                margin-right: 2px;
+                background-color: #FFCCCC;
+            }
+            #chatArea {
+              width: 700px;
+              height: 400px;
+              overflow: auto;
+              background-color: #FFFFCC;
+              margin-bottom: 2px;
+              margin-right: 2px;
+            }
+            #nameList {
+              float: right;
+              width: 219px;
+              height: 520px;
+              background-color: #FFCCFF;
+              overflow: auto;
+            }
+            #nameList div {
+              border-bottom: 1px solid #eee;
+            }
+            #nameList div:hover {
+              background-color: red;
+            }
+            #sendMsg {
+              width: 630px;
+              height: 100px;
+            }
+            #addRoom {
+              width: 160px;
+              height: 20px;
+            }
+        </style>  
+	</head>
+	<body>
+        <div id="content">
+  		    <div id="room"></div>
+            <div id="nameList">
+                <div>
+                    <input type="text" id="addRoom" placeholder="Add room here" />
+                    <button id="addRoomBtn" >Add Room</button>
+                    <br>
+                    <input type="text" id="setName" placeholder="Change Your Name" />
+                    <button id="setUserName" >Set Name</button>
+                    <br>
+                    <select  id="RoomName">
+                        <option value="Public">Public</potion>
+                    </select>
+                    <br>
+                    <button id="ChangeRoom">Change Room</button>
+                </div>
+    
+            </div>
+            <div id="chatArea"></div>
+                <form id="sendForm">
+                    <input id="sendMsg" />
+                    <input id="sendBtn" type='submit' value='Send'/>
+                </form>
+	       </div>
+        <script src='/socket.io/socket.io.js' type='text/javascript'></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script>
+            var Chat = function(socket) {
+                this.socket = socket;
+            };
+            Chat.prototype.sendMessage = function(name,room, text) {
+                var message = {
+                    name: name,
+					room: room,
+					text: text };
+                this.socket.emit('message', message);
+            };
+        </script>
+        <script>
+            var username = "user"
+            var roomName = "public";          
+            var socket = io.connect();
+            $(document).ready(function() {
+	        var chatApp = new Chat(socket);
+
+
+  	        //Display received messages
+  	        socket.on('message', function (message) {
+                var newElement = $('<div></div>').text(message.text+" (from room "+message.room+")");
+                if(message.room==roomName){
+                $('#chatArea').append(newElement);
+                }
+            });
+            
+            socket.on('rm',function(data){
+            var room = data.nm;
+            $('#RoomName').append('<option id="'+room+'">'+room+'</button>');
+	         
+            });
+            
+            $('#sendMsg').focus();
+            // make the send button to send message
+            $('#sendForm').submit(function(){
+                processUserInput(chatApp, socket);
+                return false;
+	        });
+           
+	        
+	        $('#addRoomBtn').click(function(){
+	         var room = $("#addRoom").val();
+	         $('#RoomName').append('<option id="'+room+'">'+room+'</button>');
+	         socket.emit('newRoom',{rm:room});
+	        });
+	        
+	        
+	        $('#ChangeRoom').click(function(){
+	          roomName=$("#RoomName").val();             
+	        });
+	        
+	        $('#setUserName').click(function(){
+	          username=$("#setName").val();             
+	        });
+	        
+
+	        
+        });
+
+         
+        
+        
+        function divEscapedContentElement(message) {
+          return $('<div></div>').text(message);
+        }
+
+        function divSystemContentElement(message) {
+          return $('<div></div>').html('<i>' + message + '</i>');
+        }
+        function processUserInput(chatApp, socket) {
+            var message = $('#sendMsg').val();
+            chatApp.sendMessage(username,roomName, message);
+            //Broadcast
+            $('#chatArea').append(divEscapedContentElement("me:"+message+" (in room "+roomName+")"));
+            $('#chatArea').scrollTop($('#chatArea').prop('scrollHeight'));
+            $('#sendMsg').val('');
+        }
+        
+        </script>
+    </body>
+</html>
